@@ -34,7 +34,7 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
     """
 
     def __init__(self, nb_iter: int, toeplitz_op: ToeplitzificationOperator, rank: int, rho: np.float = np.infty,
-                 tol: np.float = 1e-6, backend='scipy', method='standard'):
+                 tol: np.float = 1e-6, backend='scipy'):
         """
         Initializes an object of the class.
         :param nb_iter: int
@@ -51,11 +51,12 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
         Which backend to use for the low rank approximation.
         """
         super(CadzowAlgorithm, self).__init__(nb_iter=nb_iter, name='Cadzow')
-        # if (not isinstance(toeplitz_op, ToeplitzificationOperator)) or (not isinstance(toeplitz_op, MyToeplitzificationOperator)):
-        #      raise ValueError("Toeplitz_op must be an instance of ToeplitzificationOperator class.")
+        if (not isinstance(toeplitz_op, ToeplitzificationOperator)) or (not isinstance(toeplitz_op, MyToeplitzificationOperator)):
+            raise ValueError(
+                "Toeplitz_op must be an instance of ToeplitzificationOperator class.")
         self.toeplitz_op = toeplitz_op
         self.toeplitz_class, self.method = choose_toeplitz_class(P=self.toeplitz_op.P, M=self.toeplitz_op.M,
-                                                                 measure=True, method=method)
+                                                                 measure=True)
         # Parameters of Cadzow denoising
         self.rank = rank
         self.rho = rho
@@ -113,9 +114,11 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
                                     method=self.method)
         if (x.shape[0] == x.shape[1]) and conj_sym_coeffs:
             #print('Cadzow in Hermitian mode.')
-            x = low_rank_approximation(x, rank=self.rank, tol=self.tol, hermitian=True, backend=self.backend)
+            x = low_rank_approximation(
+                x, rank=self.rank, tol=self.tol, hermitian=True, backend=self.backend)
         else:
-            x = low_rank_approximation(x, rank=self.rank, tol=self.tol, hermitian=False, backend=self.backend)
+            x = low_rank_approximation(
+                x, rank=self.rank, tol=self.tol, hermitian=False, backend=self.backend)
         x = self.toeplitz_op.pinv(x)
         return x
 

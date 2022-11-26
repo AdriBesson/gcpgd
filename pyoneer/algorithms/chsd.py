@@ -215,7 +215,7 @@ class CHSDAlgorithm(BaseReconstructionAlgorithm):
         `x[0]` is the updated estimate, `x[1]` the data.
         """
         if self.tau_decrease_law == 'diminishing':
-            tau = self.tau * (self.total_iterations)**(-0.5)
+            tau = self.tau * (self.total_iterations)**(-0.01)
         else:
             tau = self.tau
         derivative = 2 * \
