@@ -5,6 +5,7 @@ from pyoneer.operators.linear_operator import ToeplitzificationOperator, FRISamp
 from scipy.linalg import lstsq
 from pyoneer.utils.fri import coeffs_to_matched_diracs
 from pyoneer.algorithms.cpgd import CPGDAlgorithm
+
 import matplotlib.pyplot as plt
 
 # Parameters
@@ -46,18 +47,14 @@ print(f'********** N={N}, L={L} **********')
 frequencies = np.arange(-M, M + 1)
 fs_coeff = mod.fourier_series_coefficients(M, locations, intensities, period=period)
 
-# Generate the irregular sampling operator
-G = FRISampling(frequencies, sampling_locations, period)
-print(f'Cond. num. of G of size {G.shape}: {np.linalg.cond(G.mat):.2f}')
-settings_cpgd['linear_op'] = G
-data_noiseless = G(fs_coeff)
-
 # Create Toeplitzification Operator
 Tp = ToeplitzificationOperator(P=P, M=M)
 settings_cpgd['toeplitz_op'] = Tp
 
 noise_lvl = np.max(intensities) * np.exp(-PSNR / 10)
 data_noisy = data_noiseless + noise_lvl * std_noise
+
+# Cadzow 
 
 # CPGD
 cpgd = CPGDAlgorithm(**settings_cpgd)

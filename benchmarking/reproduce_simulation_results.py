@@ -19,89 +19,74 @@ Reference:
 [1] Simeoni, M., Besson, A., Hurley, P. & Vetterli, M. (2020). Cadzow Plug-and-Play Gradient Descent for Generalised FRI.
 Under review.
 """
-
-import pickle
-import numpy as np
-import os, datetime, time
-from joblib import Parallel, delayed
-import pyoneer.model.dirac_stream as mod
-from benchmarking.plots.plot_routines import simu_plots
-from pyoneer.operators.linear_operator import ToeplitzificationOperator, FRISampling, LinearOperatorFromMatrix
-from scipy.linalg import lstsq
-from pyoneer.utils.fri import coeffs_to_matched_diracs
-from pyoneer.algorithms.cadzow_denoising import CadzowAlgorithm
-from pyoneer.algorithms.genfri import GenFRIAlgorithm
-from pyoneer.algorithms.cpgd import CPGDAlgorithm
-from pyoneer.algorithms.chsd import CHSDAlgorithm
+import time
+import datetime
+import os
 from scipy.sparse.linalg import eigs
+from pyoneer.algorithms.gcpgd import GCPGDAlgorithm
+from pyoneer.algorithms.cpgd import CPGDAlgorithm
+from pyoneer.algorithms.genfri import GenFRIAlgorithm
+from pyoneer.algorithms.cadzow_denoising import CadzowAlgorithm
+from pyoneer.utils.fri import coeffs_to_matched_diracs
+from scipy.linalg import lstsq
+from pyoneer.operators.linear_operator import ToeplitzificationOperator, FRISampling, LinearOperatorFromMatrix
+from benchmarking.plots.plot_routines import simu_plots
+import pyoneer.model.dirac_stream as mod
+from joblib import Parallel, delayed
+import numpy as np
+import pickle
+import sys
+
+sys.path.append('./')
+sys.path.append('pyoneer/.')
 
 
-def algorithmic_contest(data_noisy: np.ndarray, G: np.ndarray, K: int, period: np.float,
+def algorithmic_contest(data_noisy: np.ndarray, G: np.ndarray, K: int, period: np.float32,
                         locations: np.ndarray, algo_names: list, settings_cadzow: dict,
-                        settings_cpgd: dict, settings_genfri: dict, settings_chsd : dict):
+                        settings_cpgd: dict, settings_genfri: dict, settings_chsd: dict, data_ref = None):
     # Input and output local variables
     results = np.zeros(shape=(len(algo_names),))
+    recovery_error = np.zeros(shape=(len(algo_names),))
     positions = np.zeros(shape=(len(algo_names), K))
     times = np.zeros(shape=(len(algo_names),))
     iters = np.zeros(shape=(len(algo_names),))
 
     for i, algo_name in enumerate(algo_names):
-        # LS-Cadzow
-        if algo_name == 'LS-Cadzow':
-            pass
-            rtime = time.time()
-            fs_coeff_l2_fit, _, _, _ = lstsq(G, data_noisy, cond=1e-4, check_finite=False)
-            cadzow_algo = CadzowAlgorithm(**settings_cadzow)
-            fs_coeff_recovered = cadzow_algo.reconstruct(fs_coeff_l2_fit, verbose=False)
-            total_iterations = cadzow_algo.total_iterations
-            total_time = time.time() - rtime
         # CPGD
-        elif algo_name == 'CPGD':
+        if algo_name == 'CPGD':
             cpgd = CPGDAlgorithm(**settings_cpgd)
             fs_coeff_recovered = cpgd.reconstruct(data_noisy, verbose=False)
             total_iterations = cpgd.total_iterations
             total_time = cpgd.total_time
-        elif algo_name == 'CPGD-RED-SD':
-            chsd = CHSDAlgorithm(**settings_chsd)
-            fs_coeff_recovered = cpgd_red_sd.reconstruct(data_noisy, verbose=False)
-            total_iterations = cpgd_red_sd.total_iterations
-            total_time = cpgd_red_sd.total_time
+        # Generalized CPGD
+        elif algo_name == 'GCPGD':
+            gcpgd = GCPGDAlgorithm(**settings_gcpgd)
+            fs_coeff_recovered = gcpgd.reconstruct(data_noisy, verbose=False)
+            total_iterations = gcpgd.total_iterations
+            total_time = gcpgd.total_time
         # GenFRI
-        else:
+        elif algo_name == 'GenFRI':
             genfri = GenFRIAlgorithm(**settings_genfri)
             fs_coeff_recovered = genfri.reconstruct(data_noisy, verbose=False)
             total_iterations = genfri.total_iterations
             total_time = genfri.total_time
-        estimated_locations, cost = coeffs_to_matched_diracs(fs_coeff_recovered, K, period, locations)
+        estimated_locations, cost = coeffs_to_matched_diracs(
+            fs_coeff_recovered, K, period, locations)
+        
         times[i] = float(total_time)
-        results[i] = float(cost)
+        results[i] = np.linalg.norm(fs_coeff_recovered - fs_coeff)
         positions[i] = estimated_locations.astype(float)
         iters[i] = int(total_iterations)
+        
     return results, positions, times, iters
-
-
-def max_singular_value(G: LinearOperatorFromMatrix, eig_tol: float = 1e-8) -> float:
-    """
-    Compute the m
-    :param G:
-    :param eig_tol:
-    :return:
-    """
-    weighted_gram = 2 * G.gram
-    try:
-        beta = eigs(weighted_gram, k=1, which='LM', return_eigenvectors=False, tol=eig_tol)
-        beta *= (1 + eig_tol)
-    except Exception('Eigs solver did not converge, trying again with small tolerance...'):
-        beta = eigs(weighted_gram, k=1, which='LM', return_eigenvectors=False, tol=1e-3)
-        beta *= (1 + 1e-3)
-    return beta
-
 
 if __name__ == '__main__':
     run_simu = True  # bool, Re-run simulations
-    filename_general_settings = 'general_settings.pickle'  # str, name of pickle file storing settings
+    # str, name of pickle file storing settings
+    filename_general_settings = 'general_settings.pickle'
     filename_results = 'results.pickle'  # str, name of pickle file storing results
-    save_folder = '08102020-141308'#datetime.datetime.now().strftime("%d%m%Y-%H%M%S")  # str, name of folder in which to save the results.
+    # datetime.datetime.now().strftime("%d%m%Y-%H%M%S")  # str, name of folder in which to save the results.
+    save_folder = datetime.datetime.now().strftime("%d%m%Y-%H%M%S") #'14112023-195344'
     # The results of the paper are saved in the folder  `../results/paper_simulation_results`.
 
     # Check if results folder exists or create it:
@@ -113,21 +98,25 @@ if __name__ == '__main__':
     if run_simu:
         # Parameters
         K = 9  # int, number of Diracs
-        beta = np.array([1, 2, 3, 4, 5])  # np.ndarray, oversampling parameter
+        beta = np.array([1, 2, 3])  # np.ndarray, oversampling parameter
         M = beta * K  # np.ndarray, bandwidth parameter
         P = M  # np.ndarray, parameter P in [1].
-        N = 2 * M + 1  # np.ndarray, sizes of seeked Fourier series coefficients.
-        L = N[-2]  # float, number of measurements
+        # np.ndarray, sizes of seeked Fourier series coefficients.
+        N = 2 * M + 1
+        L = [2 * K  + 1]*len(beta)  # float, number of measurements
         period = 1  # float, period of Dirac stream
-        PSNR = list(np.linspace(-30, 30, 7))  # np.ndarray, peak signal-to-noise ratios.
-        nb_exp = 192  # int, number of random noise realizations.
-        seed = 3  # int, seed of random number generator for reproducibility.
-        tol = 1e-4  # float, tolerance for stopping criterion.
-        eig_tol = 1e-8  # float, tolerance for low-rank approximation if `backend_cadzow` is 'scipy.sparse'.
-        nb_cadzow_iter = 10  # int, number of iterations in Cadzow denoising (typically smaller than 20).
+        # np.ndarray, peak signal-to-noise ratios.
+        PSNR = list(np.linspace(-30, 30, 7))
+        nb_exp = 50  # int, number of random noise realizations.
+        seed = 4  # int, seed of random number generator for reproducibility.
+        tol = 1e-7  # float, tolerance for stopping criterion.
+        # float, tolerance for low-rank approximation if `backend_cadzow` is 'scipy.sparse'.
+        eig_tol = 1e-9
+        # int, number of iterations in Cadzow denoising (typically smaller than 20).
+        nb_cadzow_iter = 5
         backend_cadzow = 'scipy'  # str,  backend for low-rank approximation.
 
-        algo_markers = {'LS-Cadzow': 'o', 'CPGD': 'D', 'GenFRI': 'X', 'CHSD': 's'}
+        algo_markers = {'GenFRI': 'o', 'CPGD': 'D', 'GCPGD': 's'}
         algo_names = list(algo_markers.keys())
         nb_algorithms_in_contest = len(algo_names)
         # Settings dictionaries used as inputs to algorithms and routines
@@ -136,15 +125,17 @@ if __name__ == '__main__':
                           'mean_intensity': 0, 'relative_minimal_distance': 0.01,
                           'intensity_distribution': 'lognormal',
                           'seed': seed}
-        settings_cpgd = {'nb_iter': 500, 'rank': K, 'nb_cadzow_iter': nb_cadzow_iter, 'denoise_verbose': False,
+        settings_cpgd = {'nb_iter': 2000, 'rank': K, 'nb_cadzow_iter': nb_cadzow_iter, 'denoise_verbose': False,
                          'nb_init': 1, 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
                          'random_state': seed, 'cadzow_backend': backend_cadzow}
-        settings_chsd = {'nb_iter': 500, 'rank': K, 'nb_cadzow_iter': nb_cadzow_iter, 'denoise_verbose': False,
-                         'alpha': 1, 'tau_decrease_law': 'diminishing', 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
+        settings_gcpgd = {'nb_iter': 2000, 'rank': K, 'nb_cadzow_iter': nb_cadzow_iter, 'denoise_verbose': False,
+                         'alpha': 0.5, 'tau_decrease_law': 'diminishing', 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
                          'random_state': seed, 'cadzow_backend': backend_cadzow}
 
-        settings_genfri = {'nb_iter': 50, 'nb_init': 15, 'tol': tol, 'random_state': seed, 'rcond': 1e-4}
-        settings_cadzow = {'nb_iter': nb_cadzow_iter, 'rank': K, 'tol': eig_tol, 'backend': backend_cadzow}
+        settings_genfri = {'nb_iter': 50, 'nb_init': 15,
+                           'tol': tol, 'random_state': seed, 'rcond': 1e-4}
+        settings_cadzow = {'nb_iter': nb_cadzow_iter,
+                           'rank': K, 'tol': eig_tol, 'backend': backend_cadzow}
         settings_experiment = {'K': K, 'beta': beta, 'M': M, 'P': P, 'N': N, 'L': L, 'period': period, 'PSNR': PSNR,
                                'nb_exp': nb_exp, 'seed': seed}
         settings_joblib = {'n_jobs': -1, 'backend': 'multiprocessing',
@@ -152,7 +143,7 @@ if __name__ == '__main__':
 
         # Save settings
         with open(os.path.join(results_dir, filename_general_settings), 'wb') as file:
-            pickle.dump(dict(genfri=settings_genfri, cpgd=settings_cpgd, cadzow=settings_cadzow, chsd=settings_chsd,
+            pickle.dump(dict(genfri=settings_genfri, cpgd=settings_cpgd, cadzow=settings_cadzow, gcpgd=settings_gcpgd,
                              dirac=settings_dirac, experiment=settings_experiment, algo_names=algo_names,
                              algo_markers=algo_markers, joblib=settings_joblib), file)
 
@@ -160,37 +151,47 @@ if __name__ == '__main__':
         locations, intensities = mod.rnd_innovations(**settings_dirac)
 
         # Create the output variables
-        store_results = np.zeros(shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest))
-        store_positions = np.zeros(shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest, K))
-        store_times = np.zeros(shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest))
-        store_iters = np.zeros(shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest))
+        store_results = np.zeros(
+            shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest))
+        store_recovery_error = np.zeros(
+            shape=(len(beta), len(PSNR), nb_exp, nb_algorithms_in_contest))
+        store_positions = np.zeros(shape=(len(beta), len(
+            PSNR), nb_exp, nb_algorithms_in_contest, K))
+        store_times = np.zeros(shape=(len(beta), len(
+            PSNR), nb_exp, nb_algorithms_in_contest))
+        store_iters = np.zeros(shape=(len(beta), len(
+            PSNR), nb_exp, nb_algorithms_in_contest))
         cond_numbers_list = []
         fs_coeff_list = []
         data_noiseless_list = []
         low_pass_signal_list = []
 
-        # Generate sampling locations and standardised noise.
-        sampling_locations, _ = mod.rnd_innovations(L, t_end=period,
-                                                    relative_minimal_distance=0.005, seed=1)
         rng = np.random.RandomState(seed=1)
-        std_noise = rng.standard_normal(size=(sampling_locations.size, nb_exp))
 
         # Run simulations for various values of beta:
         for n in range(N.size):
-            print(f'********** N={N[n]}, L={L} **********')
+            print(f'********** N={N[n]}, L={L[n]} **********')
+
+            # Generate sampling locations and standardised noise.
+            sampling_locations, _ = mod.rnd_innovations(L[n], t_end=period,
+                                                        relative_minimal_distance=0.005, seed=1)
+            std_noise = rng.standard_normal(
+                size=(sampling_locations.size, nb_exp))
+
             # Generate noiseless Fourier coefficients
             frequencies = np.arange(-M[n], M[n] + 1)
-            fs_coeff = mod.fourier_series_coefficients(M[n], locations, intensities, period=period)
+            fs_coeff = mod.fourier_series_coefficients(
+                M[n], locations, intensities, period=period)
             fs_coeff_list.append(fs_coeff)
 
             # Generate the irregular sampling operator
             G = FRISampling(frequencies, sampling_locations, period)
-            settings_cpgd['beta'] = max_singular_value(G, eig_tol=eig_tol)
             cond_numbers_list.append(np.linalg.cond(G.mat))
-            print(f'Cond. num. of G of size {G.shape}: {cond_numbers_list[-1]:.2f}')
+            print(
+                f'Cond. num. of G of size {G.shape}: {cond_numbers_list[-1]:.2f}')
             settings_cpgd['linear_op'] = G
             settings_genfri['linear_op'] = G
-            settings_chsd['linear_op'] = G
+            settings_gcpgd['linear_op'] = G
 
             data_noiseless = G(fs_coeff)
             data_noiseless_list.append(data_noiseless)
@@ -205,22 +206,28 @@ if __name__ == '__main__':
             settings_genfri['toeplitz_op'] = Tp
             settings_chsd['toeplitz_op'] = Tp
 
+            print(settings_dirac)
             # Run benchmark in parallel with joblib
             with Parallel(**settings_joblib) as parallel:
                 for i, psnr in enumerate(PSNR):
                     print(f'Iteration: {i}, PSNR: {psnr} dB')
                     noise_lvl = np.max(intensities) * np.exp(-psnr / 10)
-                    data_noisy = data_noiseless[:, None] + noise_lvl * std_noise
+                    data_noisy = data_noiseless[:,
+                                                None] + noise_lvl * std_noise
                     if n == N.size - 1:
                         settings_cpgd['rho'] = np.linalg.norm(data_noisy)
                     list_multi = parallel(
                         delayed(algorithmic_contest)(data_noisy[:, k], G.mat, K, period, locations, algo_names,
-                                                     settings_cadzow, settings_cpgd, settings_genfri, settings_chsd)
+                                                     settings_cadzow, settings_cpgd, settings_genfri, settings_chsd, fs_coeff)
                         for k in range(nb_exp))
-                    sublist_results = [list_element[0] for list_element in list_multi]
-                    sublist_positions = [list_element[1] for list_element in list_multi]
-                    sublist_times = [list_element[2] for list_element in list_multi]
-                    sublist_iters = [list_element[-1] for list_element in list_multi]
+                    sublist_results = [list_element[0]
+                                       for list_element in list_multi]
+                    sublist_positions = [list_element[1]
+                                         for list_element in list_multi]
+                    sublist_times = [list_element[2]
+                                     for list_element in list_multi]
+                    sublist_iters = [list_element[-2]
+                                     for list_element in list_multi]
                     store_results[n, i] = np.stack(sublist_results, axis=0)
                     store_positions[n, i] = np.stack(sublist_positions, axis=0)
                     store_times[n, i] = np.stack(sublist_times, axis=0)
@@ -237,4 +244,4 @@ if __name__ == '__main__':
 
     # Generate and save the plots
     simu_plots(os.path.join(results_dir, filename_general_settings), os.path.join(results_dir, filename_results),
-               results_dir, percentile=25, cmap_name='tab10', color_ind=(4, 0, 6))
+               results_dir, percentile=25, cmap_name='tab10', color_ind=(4, 0, 6, 1))

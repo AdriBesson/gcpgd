@@ -33,8 +33,8 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
     Which backend to use for the low rank approximation.
     """
 
-    def __init__(self, nb_iter: int, toeplitz_op: ToeplitzificationOperator, rank: int, rho: np.float = np.infty,
-                 tol: np.float = 1e-6, backend='scipy'):
+    def __init__(self, nb_iter: int, toeplitz_op: ToeplitzificationOperator, rank: int, rho: np.float32 = np.infty,
+                 tol: np.float32 = 1e-6, lipschitz=1., backend='scipy'):
         """
         Initializes an object of the class.
         :param nb_iter: int
@@ -51,7 +51,7 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
         Which backend to use for the low rank approximation.
         """
         super(CadzowAlgorithm, self).__init__(nb_iter=nb_iter, name='Cadzow')
-        if (not isinstance(toeplitz_op, ToeplitzificationOperator)) or (not isinstance(toeplitz_op, MyToeplitzificationOperator)):
+        if (not isinstance(toeplitz_op, ToeplitzificationOperator)) or (not isinstance(toeplitz_op, ToeplitzificationOperator)):
             raise ValueError(
                 "Toeplitz_op must be an instance of ToeplitzificationOperator class.")
         self.toeplitz_op = toeplitz_op
@@ -62,6 +62,7 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
         self.rho = rho
         self.tol = tol
         self.backend = backend
+        self.lipschitz = lipschitz
 
     def denoise(self, x: np.ndarray, verbose: bool = False, verbose_frequency: int = 1) -> np.ndarray:
         """
@@ -136,7 +137,7 @@ class CadzowAlgorithm(BaseReconstructionAlgorithm):
         :param x: np.ndarray
         :return: np.ndarray
         """
-        return x
+        return x / self.lipschitz
 
     def proj_l2_ball(self, x: np.ndarray) -> np.ndarray:
         r"""

@@ -83,7 +83,7 @@ class GenFRIAlgorithm(BaseReconstructionAlgorithm):
         """
         out = dict()
         # b0 in [1]
-        out[0] = np.zeros(shape=(self.linear_op.shape[1],), dtype=np.complex)
+        out[0] = np.zeros(shape=(self.linear_op.shape[1],), dtype=np.complex128)
         # G'a in [1]
         out[1] = self.linear_op.rmatvec(x)
         # (G'G)^{-1}G'a in [1]
