@@ -1,11 +1,11 @@
 # ############################################################################
-# chsd.py
+# gcpgd.py
 # =======
 # Authors : Adrien Besson [adribesson@gmail.com] and Matthieu Simeoni [matthieu.simeoni@gmail.com]
 # ############################################################################
 """
-Class for the CHSD algorithm. Description and analysis of the algorithm available at:
-[1] Simeoni, M., Besson, A., Hurley, P. & Vetterli, M. (2020). Cadzow Plug-and-Play Gradient Descent for Generalised FRI.
+Class for the GCPGD algorithm. Description and analysis of the algorithm available at:
+[1] Besson, A. & Simeoni M., (2024). New Perspectives on Generalized Finite Rate of Innovation. 
 Under review.
 """
 
@@ -60,7 +60,7 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
 
     def __init__(self, nb_iter: int, linear_op: LinearOperatorFromMatrix, toeplitz_op: ToeplitzificationOperator,
                  rank: int, nb_cadzow_iter: int = 20, denoise_verbose: bool = False, denoise_verbose_frequency: int = 1,
-                 tol: float = 1e-6, eig_tol: float = 1e-8, init_sol: np.ndarray = None, alpha : float = 0.5, tau: float = None,
+                 tol: float = 1e-6, eig_tol: float = 1e-8, init_sol: np.ndarray = None, alpha: float = 0.5, tau: float = None,
                  tau_init_type: str = 'safest', tau_weight: float = 1.5, tau_decrease_law="fixed", beta: Optional[float] = None,
                  random_state: int = 1, cadzow_backend: str = 'scipy'):
         """
@@ -95,7 +95,7 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
         Backend of Cazow denoising.
         """
         super(GCPGDAlgorithm, self).__init__(nb_iter=nb_iter,
-                                            nb_init=1, name='GCPGD', random_state=random_state)
+                                             nb_init=1, name='GCPGD', random_state=random_state)
         if not isinstance(linear_op, LinearOperatorFromMatrix):
             raise ValueError(
                 "Argument linear_op must be an instance of LinearOperatorFromMatrix class.")
@@ -116,12 +116,14 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
             self.tau_weight = None
             self.tau = tau
         if not (tau_decrease_law in ["fixed", "diminishing"]):
-            raise ValueError("Invalid decrease law for step size of the gradient descent.")
+            raise ValueError(
+                "Invalid decrease law for step size of the gradient descent.")
         self.tau_decrease_law = tau_decrease_law
         self.min_error = np.infty
         self.best_estimate = None
         if ((alpha < 0) or (alpha > 1)):
-            raise ValueError("Invalid value of alpha. Must be between 0 and 1.")
+            raise ValueError(
+                "Invalid value of alpha. Must be between 0 and 1.")
         self.alpha = alpha
 
         # Initialize Cadzow denoising algorithm
@@ -131,6 +133,7 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
         self.denoising_algorithm = CadzowAlgorithm(nb_iter=self.nb_cadzow_iter, toeplitz_op=self.toeplitz_op,
                                                    rank=self.rank, rho=np.infty, tol=self.eig_tol,
                                                    backend=self.cadzow_backend)
+
     def initialize(self, y: np.ndarray) -> list:
         """
         Initialize the estimate and store the data. If `nb_init==1` the estimate is initialized to zero otherwise randomly.
@@ -206,7 +209,7 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
             self.tau = weight / beta
 
         self.tau = np.abs(self.tau)
-        
+
     def iterate(self, x: list) -> list:
         """
         Iterations of GCPGD.
@@ -222,7 +225,8 @@ class GCPGDAlgorithm(BaseReconstructionAlgorithm):
         derivative = 2 * \
             self.linear_op.rmatvec(self.linear_op.matvec(x[0]) - x[1])
         x_sd = x[0].copy() - tau * derivative
-        z = self.denoising_algorithm.reconstruct(x_sd, verbose=self.denoise_verbose, verbose_frequency=1)
+        z = self.denoising_algorithm.reconstruct(
+            x_sd, verbose=self.denoise_verbose, verbose_frequency=1)
         x[0] = self.alpha * z + (1. - self.alpha) * x_sd
         return x
 
