@@ -19,23 +19,27 @@ Reference:
 [1] Simeoni, M., Besson, A., Hurley, P. & Vetterli, M. (2020). Cadzow Plug-and-Play Gradient Descent for Generalised FRI.
 Under review.
 """
+import pickle
+import numpy as np
+from joblib import Parallel, delayed
+import pyoneer.model.dirac_stream as mod
+from plots.plot_routines import simu_plots
+from pyoneer.operators.linear_operator import ToeplitzificationOperator, FRISampling, LinearOperatorFromMatrix
+from scipy.linalg import lstsq
+from pyoneer.utils.fri import coeffs_to_matched_diracs
+from pyoneer.algorithms.cadzow_denoising import CadzowAlgorithm
+from pyoneer.algorithms.genfri import GenFRIAlgorithm
+from pyoneer.algorithms.cpgd import CPGDAlgorithm
+from pyoneer.algorithms.gcpgd import GCPGDAlgorithm
+from scipy.sparse.linalg import eigs
 import time
 import datetime
 import os
-from scipy.sparse.linalg import eigs
-from pyoneer.algorithms.gcpgd import GCPGDAlgorithm
-from pyoneer.algorithms.cpgd import CPGDAlgorithm
-from pyoneer.algorithms.genfri import GenFRIAlgorithm
-from pyoneer.algorithms.cadzow_denoising import CadzowAlgorithm
-from pyoneer.utils.fri import coeffs_to_matched_diracs
-from scipy.linalg import lstsq
-from pyoneer.operators.linear_operator import ToeplitzificationOperator, FRISampling, LinearOperatorFromMatrix
-from benchmarking.plots.plot_routines import simu_plots
-import pyoneer.model.dirac_stream as mod
-from joblib import Parallel, delayed
-import numpy as np
-import pickle
+
 import sys
+sys.path.append('./')
+sys.path.append('pyoneer/.')
+
 
 sys.path.append('./')
 sys.path.append('pyoneer/.')
@@ -43,7 +47,7 @@ sys.path.append('pyoneer/.')
 
 def algorithmic_contest(data_noisy: np.ndarray, G: np.ndarray, K: int, period: np.float32,
                         locations: np.ndarray, algo_names: list, settings_cadzow: dict,
-                        settings_cpgd: dict, settings_genfri: dict, settings_chsd: dict, data_ref = None):
+                        settings_cpgd: dict, settings_genfri: dict, settings_chsd: dict, data_ref=None):
     # Input and output local variables
     results = np.zeros(shape=(len(algo_names),))
     recovery_error = np.zeros(shape=(len(algo_names),))
@@ -72,13 +76,14 @@ def algorithmic_contest(data_noisy: np.ndarray, G: np.ndarray, K: int, period: n
             total_time = genfri.total_time
         estimated_locations, cost = coeffs_to_matched_diracs(
             fs_coeff_recovered, K, period, locations)
-        
+
         times[i] = float(total_time)
         results[i] = np.linalg.norm(fs_coeff_recovered - fs_coeff)
         positions[i] = estimated_locations.astype(float)
         iters[i] = int(total_iterations)
-        
+
     return results, positions, times, iters
+
 
 if __name__ == '__main__':
     run_simu = True  # bool, Re-run simulations
@@ -86,7 +91,8 @@ if __name__ == '__main__':
     filename_general_settings = 'general_settings.pickle'
     filename_results = 'results.pickle'  # str, name of pickle file storing results
     # datetime.datetime.now().strftime("%d%m%Y-%H%M%S")  # str, name of folder in which to save the results.
-    save_folder = datetime.datetime.now().strftime("%d%m%Y-%H%M%S") #'14112023-195344'
+    save_folder = datetime.datetime.now().strftime(
+        "%d%m%Y-%H%M%S")  # '14112023-195344'
     # The results of the paper are saved in the folder  `../results/paper_simulation_results`.
 
     # Check if results folder exists or create it:
@@ -103,7 +109,7 @@ if __name__ == '__main__':
         P = M  # np.ndarray, parameter P in [1].
         # np.ndarray, sizes of seeked Fourier series coefficients.
         N = 2 * M + 1
-        L = [2 * K  + 1]*len(beta)  # float, number of measurements
+        L = [2 * K + 1]*len(beta)  # float, number of measurements
         period = 1  # float, period of Dirac stream
         # np.ndarray, peak signal-to-noise ratios.
         PSNR = list(np.linspace(-30, 30, 7))
@@ -129,8 +135,8 @@ if __name__ == '__main__':
                          'nb_init': 1, 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
                          'random_state': seed, 'cadzow_backend': backend_cadzow}
         settings_gcpgd = {'nb_iter': 2000, 'rank': K, 'nb_cadzow_iter': nb_cadzow_iter, 'denoise_verbose': False,
-                         'alpha': 0.5, 'tau_decrease_law': 'diminishing', 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
-                         'random_state': seed, 'cadzow_backend': backend_cadzow}
+                          'alpha': 0.5, 'tau_decrease_law': 'diminishing', 'tol': tol, 'eig_tol': eig_tol, 'tau_init_type': 'safest',
+                          'random_state': seed, 'cadzow_backend': backend_cadzow}
 
         settings_genfri = {'nb_iter': 50, 'nb_init': 15,
                            'tol': tol, 'random_state': seed, 'rcond': 1e-4}
@@ -204,7 +210,7 @@ if __name__ == '__main__':
             settings_cadzow['toeplitz_op'] = Tp
             settings_cpgd['toeplitz_op'] = Tp
             settings_genfri['toeplitz_op'] = Tp
-            settings_chsd['toeplitz_op'] = Tp
+            settings_gcpgd['toeplitz_op'] = Tp
 
             print(settings_dirac)
             # Run benchmark in parallel with joblib
@@ -218,7 +224,7 @@ if __name__ == '__main__':
                         settings_cpgd['rho'] = np.linalg.norm(data_noisy)
                     list_multi = parallel(
                         delayed(algorithmic_contest)(data_noisy[:, k], G.mat, K, period, locations, algo_names,
-                                                     settings_cadzow, settings_cpgd, settings_genfri, settings_chsd, fs_coeff)
+                                                     settings_cadzow, settings_cpgd, settings_genfri, settings_gcpgd, fs_coeff)
                         for k in range(nb_exp))
                     sublist_results = [list_element[0]
                                        for list_element in list_multi]
