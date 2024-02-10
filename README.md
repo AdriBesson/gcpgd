@@ -41,7 +41,7 @@ See the `README.md` files in each directory for a full description.
 You can download a copy of all the files in this repository by cloning the
 [git](https://git-scm.com/) repository:
 
-    git clone [https://github.com/pinga-lab/PAPER-REPO.git](https://github.com/AdriBesson/gcpgd.git)
+    git clone [https://github.com/AdriBesson/gcpgd.git](https://github.com/AdriBesson/gcpgd.git)
 
 or [download a zip archive](https://github.com/AdriBesson/gcpgd/archive/refs/heads/main.zip).
 
