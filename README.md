@@ -4,7 +4,7 @@
 [Center for Imaging]: https://imaging.epfl.ch/
 [paper]: https://infoscience.epfl.ch/record/254887?&ln=en
 
-Adrien Besson<sup>1</sup> and Matthieu Simeoni<sup>2,3</sup>
+Adrien Besson<sup>1</sup> and Matthieu Simeoni<sup>2</sup>
 
 <sup>1</sup>[E-Scopics], France
 
