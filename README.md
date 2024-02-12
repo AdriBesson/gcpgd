@@ -3,8 +3,7 @@
 [E-Scopics]: https://www.e-scopics.com/
 [Center for Imaging]: https://imaging.epfl.ch/
 
-Adrien Besson<sup>1</sup> and Matthieu Simeoni<sup>2</sup>
-February 2024
+Adrien Besson<sup>1</sup> and Matthieu Simeoni<sup>2</sup>, February 2024
 
 <sup>1</sup>[E-Scopics], France
 
