@@ -1,21 +1,23 @@
-# New Perspectives on Generalized Finite Rate of Innovation
-[Ecole Polytechnique Fédérale de Lausanne (EPFL)]: http://www.epfl.ch/
+# Cadzow Projected Gradient Descent for Generalized Finite Rate of Innovation: A Quantitative Local Convergence Theory
 [E-Scopics]: https://www.e-scopics.com/
-[Center for Imaging]: https://imaging.epfl.ch/
 
-Adrien Besson<sup>1</sup> and Matthieu Simeoni<sup>2</sup>, February 2024
+Adrien Besson<sup>1</sup>, August 2026 
 
 <sup>1</sup>[E-Scopics], France
 
-<sup>2</sup>[Center for Imaging], [Ecole Polytechnique Fédérale de Lausanne (EPFL)], Switzerland
-
-Code used to reproduce the results presented in the paper entitled *New Perspectives on Generalized Finite Rate of Innovation*, submitted to IEEE Signal Processing Letters
+Code used to reproduce the results presented in the paper entitled *Cadzow Projected Gradient Descent for Generalized Finite Rate of Innovation: A Quantitative Local Convergence Theory*, submitted to IEEE Transactions on Signal Processing
 
 ## Abstract
-The generalized finite rate of innovation (GenFRI) framework aims at reconstructing finite-rate-of-innovation (FRI) signals measured through a noisy linear measurement model. GenFRI has been recently recast as a structured low-rank optimization problem and the Cadzow projected gradient descent (CPGD) algorithm has been suggested to solve it. While CPGD works well in practice, only local convergence guarantees have been established. We introduce a different view of GenFRI under the light of the regularization by denoising (RED) framework. We recast GenFRI as a RED optimization problem in which a solution lies in the fixed-point set of the Cadzow denoiser. We propose the generalized CPGD (GCPGD) algorithm, a variant of CPGD which comes with stronger convergence guarantees. We show through numerical simulations that GCPGD outperforms state-of-the-art GenFRI algorithms.
+The generalized finite rate of innovation~(GenFRI) framework aims at reconstructing finite-rate-of-innovation~(FRI) signals measured through a noisy linear measurement model.
+GenFRI has been recently recast as a structured low-rank optimization problem and the Cadzow projected gradient descent~(CPGD) algorithm has been suggested to solve it.
+While CPGD works well in practice, only qualitative local convergence guarantees have been established.
+We revisit GenFRI in the light of the regularization by denoising framework, recasting it as an optimization problem whose solutions lie in the fixed-point set of the Cadzow denoiser.
+We show that no algorithm in this family can enjoy global guarantees, and establish instead that the Cadzow denoiser is quasi-nonexpansive on an explicit neighborhood of the FRI model set, whose radius is governed by the conditioning of the underlying Dirac stream.
+Building on these results, we propose the generalized CPGD~(GCPGD) algorithm and prove its convergence from any initialization within an explicit basin of attraction, together with a reconstruction error bound proportional to the noise level.
+We show through numerical simulations that GCPGD outperforms state-of-the-art GenFRI algorithms.
 
 ## Repository Structure
-The repository has been restructured and simplified. The previous `pyoneer` library and individual reproduction scripts have been consolidated as follows:
+The repository has been structured as follows:
 * `gcpgd_lib/`: Consolidates all GCPGD algorithms, operators, signal definitions, and certificate checks.
   * `toeplitz.py`: Toeplitz weights, Toeplitz projection, rank projection, and Cadzow denoiser.
   * `signal.py`: FRI location sampling, Fourier coefficients, and measurement operators.
@@ -27,7 +29,7 @@ The repository has been restructured and simplified. The previous `pyoneer` libr
 * `reproduce_all_experiments.py`: A unified driver script to run all paper experiments under a clean CLI interface.
 
 ## Requirements
-* Python environment (Tested on 3.10)
+* Python environment (Tested on 3.12)
 * Python packages: `numpy`, `scipy`, `matplotlib`
 
 ## Getting the code
@@ -41,7 +43,7 @@ git clone https://github.com/AdriBesson/gcpgd.git
 or [download a zip archive](https://github.com/AdriBesson/gcpgd/archive/refs/heads/main.zip).
 
 ## Usage
-The `reproduce_all_experiments.py` script is the entry point for reproducing all experiments described in the paper. It supports several subcommands depending on which claim or figure you wish to validate.
+The `reproduce_all_experiments.py` script is the entry point for 1) reproducing all experiments described in the paper; 2) performing some more experiments for exploratory purpose (e.g. looking at the regularity of the Cadzow denoiser through its Lipschitz constant). It supports several subcommands depending on which claim or figure you wish to validate.
 
 ### Subcommands
 * **`rate`**: Certificate -> rate: measures the per-cycle rate of the inner alternating projections vs. the prediction $c^2$ from the nontangentiality certificate (Definition 2, Lemma 2, Thm 1(iii)).
