@@ -64,15 +64,28 @@ You can configure each subcommand with the following CLI options:
 * `--seed <seed_value>`: Sets the RNG seed (or a comma-separated list of seeds for multi-seed pooling).
 * `--outdir <dir_path>`: Specifies where output figures (.pdf) and CSVs (.csv) should be saved (defaults to current directory).
 
-### Example
-To reproduce the reconstruction accuracy simulation in Section IV.B with full fidelity and save the output plots to a custom folder:
+### Reproducing Paper Figures
+To reproduce the exact same figures as presented in the paper, run the following command:
 ```bash
-python reproduce_all_experiments.py simulation --full --outdir ./plots_output
+python3 reproduce_all_experiments.py all --full --seed 0 --outdir results/
+```
+
+> ⚠️ **Warning**: The `phase` experiment (which is included in the `all` sweep) is computationally intensive and can take a significant amount of time to complete.
+>
+> We strongly recommend running a fast version of the experiment as a sanity check first to verify your setup:
+> ```bash
+> python3 reproduce_all_experiments.py geometry --seed 0 --outdir results/
+> ```
+
+### Additional Examples
+To reproduce only the reconstruction accuracy simulation in Section IV.B with full fidelity and save the output plots to a custom folder:
+```bash
+python3 reproduce_all_experiments.py simulation --full --outdir ./plots_output
 ```
 
 To run a fast validation of the inner alternating projection rates:
 ```bash
-python reproduce_all_experiments.py rate --fast
+python3 reproduce_all_experiments.py rate --fast
 ```
 
 ## Contact
@@ -80,12 +93,12 @@ Adrien Besson (adribesson@gmail.com)
 
 ## License
 Please cite the following paper when using the code:
-A. Besson and M. Siméoni, "New Perspectives on Generalized Finite Rate of Innovation", submitted to IEEE Signal Processing Letters, 2024.
+A. Besson, "Cadzow Projected Gradient Descent for Generalized Finite Rate of Innovation: A Quantitative Local Convergence Theory", submitted to IEEE Transactions on Signal Processing 
 
 ```
 MIT License
 
-Copyright (c) 2020 Matthieu SIMEONI, Adrien BESSON, Paul HURLEY and Martin VETTERLI
+Copyright (c) 2026 Adrien BESSON
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
