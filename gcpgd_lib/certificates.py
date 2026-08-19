@@ -7,9 +7,8 @@ sigmaK_lemma4          : Lemma 4 lower bound on sigma_K
 """
 
 import numpy as np
-from numpy.linalg import svd
 
-from .toeplitz import build_toeplitz, toeplitz_weights
+from .toeplitz import build_toeplitz, toeplitz_weights, robust_svd as svd
 
 
 def check_nontangentiality(x, N, P, K, tol_unit=1e-6):

@@ -29,7 +29,7 @@ import csv
 import os
 
 import numpy as np
-from numpy.linalg import svd, pinv
+from numpy.linalg import pinv
 
 from gcpgd_lib import (build_toeplitz, cadzow_denoiser, check_nontangentiality,
                        fri_fourier, gcpgd, gnorm_factory, measurement_operator,
@@ -37,7 +37,7 @@ from gcpgd_lib import (build_toeplitz, cadzow_denoiser, check_nontangentiality,
                        sample_locations, sigmaK_lemma4, toeplitz_weights,
                        wilson_ci, recover_locations, circular_match_error,
                        toeplitz_adjoint_read, cadzow_denoise_pyoneer, run_cpgd,
-                       run_genfri, average_match_error)
+                       run_genfri, average_match_error, robust_svd as svd)
 
 
 def measure_ap_rate(x, N, P, K, w, sK, rng, iters=600, pert=0.05):
@@ -91,7 +91,7 @@ def cmd_rate(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         pred = np.array([r[4] for r in rows])
         meas = np.array([r[5] for r in rows])
         fig, ax = plt.subplots(figsize=(4.5, 4.0))
@@ -151,7 +151,7 @@ def cmd_geometry(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         ds = np.array(sorted(set(r[0] for r in rows)))
         col = lambda i, d: [r[i] for r in rows if r[0] == d]
         med = lambda i, d: np.median(col(i, d))
@@ -370,7 +370,7 @@ def _phase_emit(cfg,
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         fig, ax = plt.subplots(figsize=(6.0, 4.2))
         xs = np.arange(len(gaps)) + 0.5
         im = ax.imshow(rate,
@@ -483,7 +483,7 @@ def cmd_vanilla(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         fig, axes = plt.subplots(1, 3, figsize=(11.0, 4.0))
         for ai, (col, ttl, ylog) in enumerate([(2, r'$\ell_2$ error', True),
                                                (3, r'$\Gamma$ error', True),
@@ -577,7 +577,7 @@ def cmd_certificate(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.0, 4.0))
         cs = [r[3] for r in rows]
         a1.scatter(cs, eh, color='#348ABD', s=20, alpha=0.8)
@@ -736,7 +736,7 @@ def cmd_outer(cfg, rng):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
         fig, axs = plt.subplots(1, 2, figsize=(9.0, 4.0))
         axs[0].semilogy(e, color='#348ABD', lw=2.2, label='measured')
         axs[0].set_xlabel('outer iteration $k$', fontsize=11)
@@ -828,7 +828,7 @@ def cmd_lipschitz(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
 
         plot_Ps = [P for P in cfg.lip_Ps if P > 2]
         n_plots = len(plot_Ps)
@@ -1010,7 +1010,7 @@ def cmd_simulation(cfg, rng=None):
         import matplotlib.pyplot as plt
         plt.style.use(
             os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'custom_style.mplstyle'))
+                         'plots', 'custom_style.mplstyle'))
 
         cmap = matplotlib.colormaps.get_cmap("tab10")
 
@@ -1108,6 +1108,7 @@ def parse():
         help=
         'comma-separated dirs/globs of per-seed phase runs (phase-aggregate)')
     a = p.parse_args()
+    os.makedirs(a.outdir, exist_ok=True)
     a.seeds = [int(x) for x in str(a.seed).split(',')]
     fast = not a.full
     # rate

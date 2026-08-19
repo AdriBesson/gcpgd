@@ -10,7 +10,7 @@ Submodules:
 """
 
 from .toeplitz import (toeplitz_weights, build_toeplitz, toeplitz_adjoint_read,
-                       project_toeplitz, project_rank, cadzow_denoiser)
+                       project_toeplitz, project_rank, cadzow_denoiser, robust_svd)
 from .signal import sample_locations, fri_fourier, measurement_operator
 from .algorithm import gcpgd, gnorm_factory, cadzow_denoise_pyoneer, run_cpgd, run_genfri
 from .certificates import (check_nontangentiality, mu_gamma_full,
@@ -20,7 +20,7 @@ from .stats import wilson_ci
 
 __all__ = [
     "toeplitz_weights", "build_toeplitz", "toeplitz_adjoint_read",
-    "project_toeplitz", "project_rank", "cadzow_denoiser",
+    "project_toeplitz", "project_rank", "cadzow_denoiser", "robust_svd",
     "sample_locations", "fri_fourier", "measurement_operator",
     "gcpgd", "gnorm_factory", "cadzow_denoise_pyoneer", "run_cpgd", "run_genfri",
     "check_nontangentiality", "mu_gamma_full", "mu_restricted", "sigmaK_lemma4",

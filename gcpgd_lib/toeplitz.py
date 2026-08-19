@@ -6,7 +6,15 @@ Gamma = diag(w) with w = toeplitz_weights(N, P) makes T_P an isometry from
 """
 
 import numpy as np
-from numpy.linalg import svd
+import scipy.linalg as splin
+
+
+def robust_svd(A, full_matrices=True, compute_uv=True):
+    r"""Robust SVD wrapper that falls back to scipy's QR-based 'gesvd' driver if numpy's default 'gesdd' fails to converge."""
+    try:
+        return np.linalg.svd(A, full_matrices=full_matrices, compute_uv=compute_uv)
+    except np.linalg.LinAlgError:
+        return splin.svd(A, full_matrices=full_matrices, compute_uv=compute_uv, lapack_driver='gesvd')
 
 
 def toeplitz_weights(N, P):
@@ -49,7 +57,7 @@ def project_toeplitz(A, N, P, w):
 
 def project_rank(A, K):
     r"""Projection onto rank-<=K matrices (truncated SVD)."""
-    U, s, Vh = svd(A, full_matrices=False)
+    U, s, Vh = robust_svd(A, full_matrices=False)
     s[K:] = 0.0
     return (U * s) @ Vh
 

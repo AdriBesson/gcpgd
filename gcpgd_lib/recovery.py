@@ -1,10 +1,9 @@
 r"""Location recovery (annihilating filter) and circular matching error."""
 
 import numpy as np
-from numpy.linalg import svd
 from scipy.optimize import linear_sum_assignment
 
-from .toeplitz import build_toeplitz
+from .toeplitz import build_toeplitz, robust_svd as svd
 
 
 def recover_locations(x, N, P, K):
