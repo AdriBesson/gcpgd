@@ -23,10 +23,11 @@ def gcpgd(y,
           max_iter=2000,
           tol=1e-6,
           step_size='constant',
+          gamma_power=1.0,
           return_iter=False):
     r"""Run GCPGD with the Gamma-gradient step; return (x, converged_flag).
 
-    v = x - step_size_val Gamma^{-1} G^H (G x - y);  z = H_n(v);  x = alpha z + (1-a) v.
+    v = x - step_size_val Gamma^{-p} G^H (G x - y);  z = H_n(v);  x = alpha z + (1-a) v.
     tau = 1 / (2 ||G||_Gamma^2), ||G||_Gamma = sigma_max(G Gamma^{-1/2}).
     Convergence flag: relative Gamma-norm step below tol.
 
@@ -44,23 +45,31 @@ def gcpgd(y,
         Toeplitz weights.
     n_cadzow : int, optional
         Cadzow denoising iterations.
-    alpha : float, optional
+    alpha : float, str, or callable, optional
         Relaxation parameter.
+        - float (e.g. 0.5, default): Uses a constant relaxation parameter.
+        - 'dynamic': Uses an exponentially increasing schedule from 0.5 to 1.0.
+        - callable: A function of signature `alpha(k)` returning the relaxation parameter at iteration k (1-based index).
     max_iter : int, optional
         Maximum iterations.
     tol : float, optional
         Convergence tolerance.
     step_size : str, float, or callable, optional
         The step size strategy to use:
-        - 'constant' (default): Uses a constant step size equal to 2.0 * tau.
-        - 'diminishing': Uses a diminishing step size equal to 2.0 * tau / sqrt(k)
+        - 'constant' (default): Uses a constant step size equal to 1.0 * tau.
+        - 'diminishing': Uses a diminishing step size equal to 1.0 * tau / sqrt(k)
           at iteration k (1-based index).
-        - 'diminishing-linear': Uses a diminishing step size equal to 2.0 * tau / k
+        - 'diminishing-linear': Uses a diminishing step size equal to 1.0 * tau / k
           at iteration k (1-based index).
         - float: Uses a constant custom step size equal to the given float.
         - callable: A function of signature `step_size(k, tau)` returning the
           step size for that iteration, where k is the iteration (1-based index)
           and tau is the base tau value.
+    gamma_power : float, str, or callable, optional
+        Exponent p for the Toeplitz-weighting divisor (w**p):
+        - float (e.g. 1.0, default): Constant power.
+        - 'dynamic': Exponentially decay from 1.0 (GCPGD) to 0.0 (CPGD) as total_iter increases.
+        - callable: Function of signature `gamma_power(k)` returning the exponent at iteration k (1-based index).
     return_iter : bool, optional
         If True, return total number of iterations.
     """
@@ -90,10 +99,28 @@ def gcpgd(y,
         else:
             raise ValueError(f"Unknown step_size option: {step_size}")
 
+        if alpha == 'dynamic':
+            alpha_val = 0.5 + 0.5 * (1.0 - np.exp(-0.005 * (total_iter - 1)))
+        elif isinstance(alpha, (int, float)):
+            alpha_val = float(alpha)
+        elif callable(alpha):
+            alpha_val = alpha(total_iter)
+        else:
+            raise ValueError(f"Unknown alpha option: {alpha}")
+
+        if gamma_power == 'dynamic':
+            p_val = np.exp(-0.005 * (total_iter - 1))
+        elif isinstance(gamma_power, (int, float)):
+            p_val = float(gamma_power)
+        elif callable(gamma_power):
+            p_val = gamma_power(total_iter)
+        else:
+            raise ValueError(f"Unknown gamma_power option: {gamma_power}")
+
         grad = Gh @ (G @ x - y)
-        v = x - step_size_val * (grad / w)
+        v = x - step_size_val * (grad / (w ** p_val))
         z = cadzow_denoiser(v, N, P, K, n_cadzow, w)
-        x_new = alpha * z + (1.0 - alpha) * v
+        x_new = alpha_val * z + (1.0 - alpha_val) * v
         if gnorm(x_new - x) <= tol * max(gnorm(x), 1e-12):
             x = x_new
             converged = True

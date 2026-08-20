@@ -22,17 +22,19 @@ def recover_locations(x, N, P, K):
     return np.sort(t)
 
 
-def circular_match_error(t_true, t_est):
-    r"""Max matched circular location error under the optimal assignment."""
+def _match_distances(t_true, t_est):
+    r"""Matched circular location errors under the optimal assignment."""
     D = np.abs(t_true[:, None] - t_est[None, :])
     D = np.minimum(D, 1.0 - D)
     ri, ci = linear_sum_assignment(D)
-    return D[ri, ci].max()
+    return D[ri, ci]
+
+
+def circular_match_error(t_true, t_est):
+    r"""Max matched circular location error under the optimal assignment."""
+    return _match_distances(t_true, t_est).max()
 
 
 def average_match_error(t_true, t_est):
     r"""Mean matched circular location error under the optimal assignment."""
-    D = np.abs(t_true[:, None] - t_est[None, :])
-    D = np.minimum(D, 1.0 - D)
-    ri, ci = linear_sum_assignment(D)
-    return float(D[ri, ci].mean())
+    return float(_match_distances(t_true, t_est).mean())

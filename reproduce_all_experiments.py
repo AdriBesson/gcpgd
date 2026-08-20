@@ -188,12 +188,13 @@ def cmd_geometry(cfg, rng=None):
                     ls=':',
                     lw=1.5,
                     label=r'validity edge')
-        axL.set_xlabel(r'separation $\Delta$')
+        axL.set_xlabel(r'separation $\Delta$', fontsize=20)
         axL.set_xscale('log')
-        axL.set_ylabel(r'$\sigma_K$')
+        axL.set_ylabel(r'$\sigma_K$', fontsize=20)
         axL.set_ylim(bottom=0)
-        axL.legend(fontsize=9, loc='upper left')
-        axL.set_title(r'conditioning vs.\ Lemma 4', fontsize=11)
+        axL.legend(fontsize=15, loc='upper left')
+        axL.tick_params(axis='both', which='major', labelsize=16)
+        axL.set_title(r'conditioning vs.\ Lemma 4', fontsize=20)
 
         # -- panel B: collision sweep -- drive ONE pair together (gap -> 0)
         #    and show that sigma_K collapses while c stays bounded away from 1.
@@ -214,18 +215,19 @@ def cmd_geometry(cfg, rng=None):
             sk_coll.append(np.median(ss))
         axB = axR
         axB.semilogx(gaps, c_coll, 'o-', color='#E24A33', ms=4)
-        axB.set_xlabel(r'colliding-pair gap')
+        axB.set_xlabel(r'colliding-pair gap', fontsize=20)
         axB.invert_xaxis()
-        axB.set_ylabel(r'median angle constant $c$', color='#E24A33')
+        axB.set_ylabel(r'median angle constant $c$', color='#E24A33', fontsize=20)
         axB.set_ylim(0, 1)
-        axB.tick_params(axis='y', labelcolor='#E24A33')
+        axB.tick_params(axis='x', labelsize=16)
+        axB.tick_params(axis='y', labelsize=16, labelcolor='#E24A33')
         axB.axhline(1.0, color='#E24A33', ls=':', lw=1.0, alpha=0.8)
         axB2 = axB.twinx()
         axB2.semilogy(gaps, sk_coll, 's-', color='#348ABD', ms=4)
-        axB2.set_ylabel(r'median $\sigma_K$ (log)', color='#348ABD')
-        axB2.tick_params(axis='y', labelcolor='#348ABD')
+        axB2.set_ylabel(r'median $\sigma_K$ (log)', color='#348ABD', fontsize=20)
+        axB2.tick_params(axis='y', labelsize=16, labelcolor='#348ABD')
         axB.set_title(r'collision: $\sigma_K \to 0$ but $c \not\to 1$',
-                      fontsize=11)
+                      fontsize=20)
 
         fig.tight_layout()
         fig.savefig(_p(cfg, 'geometry.pdf'),
@@ -739,15 +741,16 @@ def cmd_outer(cfg, rng):
                          'custom_style.mplstyle'))
         fig, axs = plt.subplots(1, 2, figsize=(9.0, 4.0))
         axs[0].semilogy(e, color='#348ABD', lw=2.2, label='measured')
-        axs[0].set_xlabel('outer iteration $k$', fontsize=11)
-        axs[0].set_ylabel(r'$\|x_k - x^\ast\|_\Gamma$', fontsize=11)
+        axs[0].set_xlabel('outer iteration $k$', fontsize=20)
+        axs[0].set_ylabel(r'$\|x_k - x^\ast\|_\Gamma$', fontsize=20)
         axs[0].semilogy(np.arange(len(e)),
                         e[0] * qt**np.arange(len(e)),
                         color='#E24A33',
                         ls='--',
                         lw=1.8,
                         label=r'$\tilde q^{\,k}$ bound')
-        axs[0].legend(fontsize=9, loc='upper right')
+        axs[0].legend(fontsize=15, loc='upper right')
+        axs[0].tick_params(axis='both', which='major', labelsize=16)
         axs[1].loglog(ne[good],
                       er[good],
                       'o',
@@ -761,9 +764,10 @@ def cmd_outer(cfg, rng):
                       ls='--',
                       lw=1.8,
                       label=r'$(2/\mu)\|\epsilon\|$')
-        axs[1].set_xlabel(r'$\|\epsilon\|_2$', fontsize=11)
-        axs[1].set_ylabel(r'$\|\bar x - x^\ast\|_\Gamma$', fontsize=11)
-        axs[1].legend(fontsize=9, loc='upper left')
+        axs[1].set_xlabel(r'$\|\epsilon\|_2$', fontsize=20)
+        axs[1].set_ylabel(r'$\|\bar x - x^\ast\|_\Gamma$', fontsize=20)
+        axs[1].legend(fontsize=15, loc='upper left')
+        axs[1].tick_params(axis='both', which='major', labelsize=16)
         fig.tight_layout()
         fig.savefig(_p(cfg, 'outer.pdf'), bbox_inches='tight', pad_inches=0.01)
         print('figure ->', _p(cfg, 'outer.pdf'))
@@ -1027,9 +1031,9 @@ def cmd_simulation(cfg, rng=None):
                 p75 = []
                 for ps in cfg.sim_psnrs:
                     vals = np.array(results_data[beta_val][ps][method])
-                    medians.append(100.0 * np.median(vals))
-                    p25.append(100.0 * np.percentile(vals, 25))
-                    p75.append(100.0 * np.percentile(vals, 75))
+                    medians.append(np.median(vals))
+                    p25.append(np.percentile(vals, 25))
+                    p75.append(np.percentile(vals, 75))
 
                 ax.plot(cfg.sim_psnrs,
                         medians,
