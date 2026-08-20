@@ -27,6 +27,7 @@ The repository has been structured as follows:
   * `stats.py`: Wilson binomial interval utility.
 * `plots/`: Contains custom plotting styles and utilities.
 * `reproduce_all_experiments.py`: A unified driver script to run all paper experiments under a clean CLI interface.
+* `plot_from_csv.py`: A custom utility script to regenerate all paper figures directly from existing CSV outputs.
 
 ## Requirements
 * Python environment (Tested on 3.12)
@@ -87,6 +88,22 @@ To run a fast validation of the inner alternating projection rates:
 ```bash
 python3 reproduce_all_experiments.py rate --fast
 ```
+
+### Regenerating Plots from CSV
+If you have already executed the experiments and have the generated CSV outputs in a directory (e.g. `./results`), you can use the lightweight utility `plot_from_csv.py` to regenerate the corresponding paper PDF figures directly without re-running any heavy simulations:
+
+* **Regenerate all figures:**
+  ```bash
+  python3 plot_from_csv.py all --indir results --outdir results
+  ```
+* **Regenerate a specific figure (e.g., `geometry`):**
+  ```bash
+  python3 plot_from_csv.py geometry --indir results --outdir results
+  ```
+* **Print all available options:**
+  ```bash
+  python3 plot_from_csv.py --help
+  ```
 
 ## Contact
 Adrien Besson (adribesson@gmail.com)
