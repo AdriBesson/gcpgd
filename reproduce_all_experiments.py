@@ -90,8 +90,8 @@ def cmd_rate(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         pred = np.array([r[4] for r in rows])
         meas = np.array([r[5] for r in rows])
         fig, ax = plt.subplots(figsize=(4.5, 4.0))
@@ -150,8 +150,8 @@ def cmd_geometry(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         ds = np.array(sorted(set(r[0] for r in rows)))
         col = lambda i, d: [r[i] for r in rows if r[0] == d]
         med = lambda i, d: np.median(col(i, d))
@@ -369,8 +369,8 @@ def _phase_emit(cfg,
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         fig, ax = plt.subplots(figsize=(6.0, 4.2))
         xs = np.arange(len(gaps)) + 0.5
         im = ax.imshow(rate,
@@ -482,8 +482,8 @@ def cmd_vanilla(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         fig, axes = plt.subplots(1, 3, figsize=(11.0, 4.0))
         for ai, (col, ttl, ylog) in enumerate([(2, r'$\ell_2$ error', True),
                                                (3, r'$\Gamma$ error', True),
@@ -576,8 +576,8 @@ def cmd_certificate(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.0, 4.0))
         cs = [r[3] for r in rows]
         a1.scatter(cs, eh, color='#348ABD', s=20, alpha=0.8)
@@ -735,8 +735,8 @@ def cmd_outer(cfg, rng):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
         fig, axs = plt.subplots(1, 2, figsize=(9.0, 4.0))
         axs[0].semilogy(e, color='#348ABD', lw=2.2, label='measured')
         axs[0].set_xlabel('outer iteration $k$', fontsize=11)
@@ -827,8 +827,8 @@ def cmd_lipschitz(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
 
         plot_Ps = [P for P in cfg.lip_Ps if P > 2]
         n_plots = len(plot_Ps)
@@ -1009,8 +1009,8 @@ def cmd_simulation(cfg, rng=None):
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         plt.style.use(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'plots', 'custom_style.mplstyle'))
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plots',
+                         'custom_style.mplstyle'))
 
         cmap = matplotlib.colormaps.get_cmap("tab10")
 
@@ -1046,16 +1046,33 @@ def cmd_simulation(cfg, rng=None):
                                 alpha=0.30,
                                 lw=0)
 
+            # Explicitly format the plot to match the target paper style
+            fig.patch.set_facecolor('white')
+            ax.set_facecolor('#E5E5E5')
+            ax.grid(True,
+                    which='both',
+                    color='white',
+                    linestyle='-',
+                    linewidth=0.9)
+            ax.set_axisbelow(True)
+
             ax.set_yscale('log')
-            ax.set_xlabel('PSNR (dB)', fontsize=11)
-            ax.set_ylabel(r'Reconstruction error (\%)', fontsize=11)
-            ax.set_title(r'$\beta = ' + f'{beta_val}' + r'$', fontsize=12)
-            ax.legend(fontsize=10)
+            ax.set_xlabel('PSNR (dB)', fontsize=16)
+            ax.set_ylabel('Reconstruction error', fontsize=16)
+
+            ax.tick_params(axis='both', which='major', labelsize=14)
+            ax.tick_params(axis='both', which='minor', labelsize=12)
+
+            ax.legend(fontsize=15,
+                      frameon=True,
+                      facecolor='white',
+                      edgecolor='#555555')
 
             fig.tight_layout()
             fig.savefig(_p(cfg, f'reconstruction_error_beta_{beta_val}.pdf'),
                         bbox_inches='tight',
-                        pad_inches=0.01)
+                        pad_inches=0.01,
+                        transparent=False)
             print('figure ->',
                   _p(cfg, f'reconstruction_error_beta_{beta_val}.pdf'))
 
@@ -1168,7 +1185,7 @@ def parse():
     a.sim_K = 5 if fast else 9
     a.sim_beta = [1, 2] if fast else [1, 2, 3]
     a.sim_psnrs = [-10, 0, 10, 20] if fast else [-30, -20, -10, 0, 10, 20, 30]
-    a.sim_trials = 4 if fast else 50
+    a.sim_trials = 4 if fast else 10
     a.sim_ncad = 5
     a.sim_seed = 4
     a.sim_maxit = 4000

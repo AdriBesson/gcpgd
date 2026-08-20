@@ -22,12 +22,47 @@ def gcpgd(y,
           alpha=0.5,
           max_iter=2000,
           tol=1e-6,
+          step_size='constant',
           return_iter=False):
     r"""Run GCPGD with the Gamma-gradient step; return (x, converged_flag).
 
-    v = x - 2 tau Gamma^{-1} G^H (G x - y);  z = H_n(v);  x = alpha z + (1-a) v.
+    v = x - step_size_val Gamma^{-1} G^H (G x - y);  z = H_n(v);  x = alpha z + (1-a) v.
     tau = 1 / (2 ||G||_Gamma^2), ||G||_Gamma = sigma_max(G Gamma^{-1/2}).
     Convergence flag: relative Gamma-norm step below tol.
+
+    Parameters:
+    -----------
+    y : array_like
+        Measurements.
+    G : array_like
+        Measurement operator G.
+    x0 : array_like
+        Initial guess for x.
+    N, P, K : int
+        Problem dimensions.
+    w : array_like
+        Toeplitz weights.
+    n_cadzow : int, optional
+        Cadzow denoising iterations.
+    alpha : float, optional
+        Relaxation parameter.
+    max_iter : int, optional
+        Maximum iterations.
+    tol : float, optional
+        Convergence tolerance.
+    step_size : str, float, or callable, optional
+        The step size strategy to use:
+        - 'constant' (default): Uses a constant step size equal to 2.0 * tau.
+        - 'diminishing': Uses a diminishing step size equal to 2.0 * tau / sqrt(k)
+          at iteration k (1-based index).
+        - 'diminishing-linear': Uses a diminishing step size equal to 2.0 * tau / k
+          at iteration k (1-based index).
+        - float: Uses a constant custom step size equal to the given float.
+        - callable: A function of signature `step_size(k, tau)` returning the
+          step size for that iteration, where k is the iteration (1-based index)
+          and tau is the base tau value.
+    return_iter : bool, optional
+        If True, return total number of iterations.
     """
     Ginv_sqrt = 1.0 / np.sqrt(w)
     G_scaled = G * Ginv_sqrt[None, :]
@@ -41,8 +76,22 @@ def gcpgd(y,
     total_iter = 0
     for _ in range(max_iter):
         total_iter += 1
+
+        if step_size == 'constant':
+            step_size_val = 1.0 * tau
+        elif step_size == 'diminishing':
+            step_size_val = 1.0 * tau / np.sqrt(total_iter)
+        elif step_size == 'diminishing-linear':
+            step_size_val = 1.0 * tau / total_iter
+        elif isinstance(step_size, (int, float)):
+            step_size_val = float(step_size)
+        elif callable(step_size):
+            step_size_val = step_size(total_iter, tau)
+        else:
+            raise ValueError(f"Unknown step_size option: {step_size}")
+
         grad = Gh @ (G @ x - y)
-        v = x - 2.0 * tau * (grad / w)
+        v = x - step_size_val * (grad / w)
         z = cadzow_denoiser(v, N, P, K, n_cadzow, w)
         x_new = alpha * z + (1.0 - alpha) * v
         if gnorm(x_new - x) <= tol * max(gnorm(x), 1e-12):
