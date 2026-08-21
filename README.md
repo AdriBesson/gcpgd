@@ -23,8 +23,8 @@ The repository has been structured as follows:
   * `signal.py`: FRI location sampling, Fourier coefficients, and measurement operators.
   * `algorithm.py`: GCPGD iteration (using Gamma-gradient step), CPGD, and GenFRI algorithms.
   * `certificates.py`: Nontangentiality certificate, restricted/global mu calculation, and Lemma 4 bounds.
-  * `recovery.py`: Annihilating-filter location recovery and circular/average match error calculation.
-  * `stats.py`: Wilson binomial interval utility.
+  * `recovery.py`: Annihilating-filter location recovery.
+  * `metrics.py`: Circular/average matching errors and Wilson binomial interval utilities.
 * `plots/`: Contains custom plotting styles and utilities.
 * `reproduce_all_experiments.py`: A unified driver script to run all paper experiments under a clean CLI interface.
 * `plot_from_csv.py`: A custom utility script to regenerate all paper figures directly from existing CSV outputs.

@@ -228,6 +228,7 @@ def plot_phase(indir, outdir):
     im = ax.imshow(rate, origin='lower', aspect='auto',
                    extent=[0, len(gaps), psnrs[0], psnrs[-1]],
                    cmap='viridis', vmin=0, vmax=1)
+    ax.grid(False)
                    
     ax.plot(xs, th_meas, color='#E24A33', ls='-', lw=2.2, label=r'Thm 2 threshold (measured $\sigma_K,\mu$)')
     ax.plot(xs, th_fit, 'w:', lw=1.8, label=f'shape, 1-const fit ({b:+.0f} dB)')
@@ -238,16 +239,19 @@ def plot_phase(indir, outdir):
     if gaps.min() < d_edge < gaps.max():
         xe = float(np.interp(d_edge, gaps, xs))
         ax.axvline(xe, color='#555555', ls=':', lw=1.2, alpha=0.8)
-        ax.text(xe, psnrs[0] + 2, ' validity edge', fontsize=8, rotation=90)
+        ax.text(xe, psnrs[0] + 2, ' validity edge', fontsize=12, rotation=90)
         
     ax.set_xticks(xs)
-    ax.set_xticklabels([f'{g:.3f}' for g in gaps], fontsize=8)
-    ax.set_xlabel(r'minimum separation $\Delta$ (one pair merging)')
-    ax.set_ylabel('PSNR (dB)')
+    ax.set_xticklabels([f'{g:.3f}' for g in gaps], fontsize=11)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.set_xlabel(r'minimum separation $\Delta$ (one pair merging)', fontsize=16)
+    ax.set_ylabel('PSNR (dB)', fontsize=16)
     ax.set_ylim(psnrs[0], psnrs[-1])
-    ax.set_title(r'exact recovery (err $\leq 0.1\sigma_K$) vs. predicted thresholds', fontsize=10)
-    ax.legend(fontsize=8, loc='upper right')
-    fig.colorbar(im, label='success rate')
+    ax.set_title(r'exact recovery (err $\leq 0.1\sigma_K$) vs. predicted thresholds', fontsize=16)
+    ax.legend(fontsize=11, loc='upper right')
+    cbar = fig.colorbar(im)
+    cbar.ax.set_ylabel('success rate', fontsize=16)
+    cbar.ax.tick_params(labelsize=12)
     
     fig.tight_layout()
     out_path = os.path.join(outdir, 'phase.pdf')
